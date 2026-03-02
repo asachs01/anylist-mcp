@@ -9,8 +9,8 @@ import type { AnyListConfig, CreateMealEventRequest } from '../../src/types/inde
 vi.mock('anylist', () => ({
   default: vi.fn(() => ({
     login: vi.fn(),
-    getMealEvents: vi.fn(),
-    mealEvents: mockMealEvents,
+    getMealPlanningCalendarEvents: vi.fn(),
+    mealPlanningCalendarEvents: mockMealEvents,
     teardown: vi.fn(),
   })),
 }));
