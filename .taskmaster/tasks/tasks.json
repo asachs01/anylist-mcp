@@ -1,0 +1,307 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Project Repository and Initial Configuration",
+        "description": "Initialize the project repository, install dependencies, and configure environment variables.",
+        "details": "Clone the repository, install Node.js 18.0.0 or higher, and run `npm install`. Create a `.env` file with ANYLIST_EMAIL, ANYLIST_PASSWORD, and ANYLIST_CREDENTIALS_FILE. Add `.env` and `.anylist_credentials` to `.gitignore`. Use TypeScript for type safety and FastMCP for MCP server implementation. Recommended libraries: Node.js 18+, TypeScript 5.x, FastMCP (latest), tsx for running TypeScript.",
+        "testStrategy": "Verify repository setup, dependency installation, and environment variable configuration by running `npm run type-check` and checking for errors. Ensure `.env` and `.anylist_credentials` are not tracked by git.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement AnyList API Service Layer",
+        "description": "Create a service layer to interact with the AnyList API using provided credentials.",
+        "details": "Implement `anylist-service.ts` to handle authentication, list, recipe, and meal planning operations. Use the unofficial AnyList API wrapper (anylist-api) for Node.js. Handle session management, error handling, and retries. Store credentials securely and refresh tokens as needed. Use axios or node-fetch for HTTP requests.",
+        "testStrategy": "Write unit tests for authentication, list retrieval, and basic CRUD operations. Mock API responses to test error handling and edge cases.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Define MCP Tool Types and Schemas",
+        "description": "Define TypeScript types and validation schemas for MCP tools.",
+        "details": "Create `types/index.ts` for shared types (List, Item, Recipe, MealEvent). Use Zod for runtime validation in `utils/validation.ts`. Define schemas for all tool parameters and responses.",
+        "testStrategy": "Write unit tests for type definitions and validation schemas. Ensure all required fields are validated and error messages are clear.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement List Management Tools",
+        "description": "Implement MCP tools for list management: get, add, update, remove, toggle, and bulk operations.",
+        "details": "Create `tools/list-tools.ts` with functions for each list operation. Use the AnyList service to interact with the API. Implement error handling and input validation using Zod. Expose tools via FastMCP.",
+        "testStrategy": "Write integration tests for each list tool. Test with valid and invalid inputs, and verify API responses and error handling.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Recipe Management Tools",
+        "description": "Implement MCP tools for recipe CRUD, details, import, collections, and search.",
+        "details": "Create `tools/recipe-tools.ts` with functions for recipe operations. Use the AnyList service for API calls. Support recipe import from URLs where possible. Implement validation and error handling.",
+        "testStrategy": "Write integration tests for each recipe tool. Test recipe creation, update, deletion, import, and search. Verify error handling and edge cases.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Meal Planning Tools",
+        "description": "Implement MCP tools for meal event management, recipe assignment, and calendar integration.",
+        "details": "Create `tools/meal-tools.ts` with functions for meal event CRUD, recipe assignment, and calendar views. Use the AnyList service for API calls. Implement validation and error handling.",
+        "testStrategy": "Write integration tests for each meal tool. Test meal event creation, update, deletion, recipe assignment, and calendar views. Verify error handling and edge cases.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Integrate MCP Server with Claude Desktop",
+        "description": "Configure and test integration with Claude Desktop or other MCP-compatible clients.",
+        "details": "Update Claude Desktop configuration to point to the MCP server. Use environment variables for credentials. Ensure the server starts and exposes all tools. Test natural language interactions.",
+        "testStrategy": "Verify server starts and exposes all tools. Test natural language commands in Claude Desktop. Check for authentication and connection issues.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          4,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement Debug and Logging Features",
+        "description": "Add debug logging and error reporting for troubleshooting.",
+        "details": "Use the `debug` library for verbose logging. Set `DEBUG=anylist-mcp` to enable. Log API requests, responses, and errors. Add error reporting for common issues.",
+        "testStrategy": "Enable debug mode and verify logs are generated for API calls and errors. Test error reporting for authentication and connection issues.",
+        "priority": "low",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Write Comprehensive Unit and Integration Tests",
+        "description": "Develop a robust test suite covering all tools and edge cases.",
+        "details": "Use Jest for unit and integration tests. Mock AnyList API responses. Test all tool functions, validation, and error handling. Include test coverage reporting.",
+        "testStrategy": "Run `npm test` and `npm run test:coverage`. Ensure all tools and edge cases are covered. Aim for high test coverage.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Document API Reference and Usage Examples",
+        "description": "Create detailed documentation for all MCP tools and usage examples.",
+        "details": "Document each tool’s parameters, responses, and usage in the README. Include natural language examples for Claude Desktop. Add troubleshooting and common issues sections.",
+        "testStrategy": "Review documentation for accuracy and completeness. Test example commands in Claude Desktop. Verify troubleshooting steps.",
+        "priority": "low",
+        "dependencies": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Project Setup and Dependencies",
+        "description": "Initialize project structure, install core dependencies, and configure development environment",
+        "details": "1. Initialize Node.js project with TypeScript\n2. Install dependencies:\n   - fastmcp@latest for MCP implementation\n   - anylist@latest for API integration\n   - dotenv@^16.3.1 for environment management\n   - zod@^3.22.4 for validation\n   - tsx@^4.7.0 for TypeScript execution\n   - jest@^29.7.0 for testing\n3. Configure TypeScript (tsconfig.json)\n4. Setup ESLint and Prettier\n5. Create project structure as specified in PRD",
+        "testStrategy": "1. Verify all dependencies install correctly\n2. Run typescript compilation check\n3. Validate ESLint configuration\n4. Test environment variable loading",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Authentication and Configuration System",
+        "description": "Implement secure credential management and configuration system for AnyList integration",
+        "details": "1. Create .env handling using dotenv\n2. Implement credential file management (.anylist_credentials)\n3. Create secure storage for AnyList authentication\n4. Add validation for environment variables\n5. Implement credential refresh mechanism\n6. Use node-keytar@^7.9.0 for secure credential storage",
+        "testStrategy": "1. Test environment variable validation\n2. Verify credential file creation and permissions\n3. Test authentication flow\n4. Validate secure storage implementation",
+        "priority": "high",
+        "dependencies": [
+          11
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "AnyList Service Integration",
+        "description": "Create service layer for interacting with AnyList API",
+        "details": "1. Implement AnyListService class using anylist package\n2. Create connection management\n3. Implement error handling and retry logic\n4. Add request rate limiting (100 requests/minute)\n5. Create connection pool management\n6. Implement service methods for all required operations",
+        "testStrategy": "1. Unit tests for service methods\n2. Integration tests with AnyList API\n3. Test error handling scenarios\n4. Verify rate limiting functionality",
+        "priority": "high",
+        "dependencies": [
+          12
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "List Management Tools Implementation",
+        "description": "Implement MCP tools for list operations (get, add, update, remove, toggle)",
+        "details": "1. Create ListTools class extending MCP base tools\n2. Implement list operations:\n   - get_lists()\n   - add_item(listId, name, quantity?, details?)\n   - update_item(listId, itemId, updates)\n   - remove_item(listId, itemId)\n   - toggle_item(listId, itemId)\n   - uncheck_all_items(listId)\n3. Add input validation using Zod\n4. Implement bulk operations handling",
+        "testStrategy": "1. Unit tests for each list operation\n2. Integration tests with AnyList service\n3. Validation testing\n4. Performance testing for bulk operations",
+        "priority": "high",
+        "dependencies": [
+          13
+        ],
+        "status": "in-progress",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Recipe Management Tools Implementation",
+        "description": "Implement MCP tools for recipe operations (CRUD, import, collections)",
+        "details": "1. Create RecipeTools class extending MCP base tools\n2. Implement recipe operations:\n   - get_recipes()\n   - get_recipe(recipeId)\n   - create_recipe(details)\n   - update_recipe(recipeId, updates)\n   - delete_recipe(recipeId)\n   - import_recipe_from_url(url)\n3. Implement collection management\n4. Add URL validation and parsing for recipe import",
+        "testStrategy": "1. Unit tests for recipe operations\n2. Test URL import functionality\n3. Validate collection management\n4. Test recipe format validation",
+        "priority": "medium",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Meal Planning Tools Implementation",
+        "description": "Implement MCP tools for meal planning functionality",
+        "details": "1. Create MealTools class extending MCP base tools\n2. Implement meal planning operations:\n   - get_meal_events()\n   - get_meal_events_by_date(date)\n   - create_meal_event(details)\n   - delete_meal_event(eventId)\n   - get_weekly_meal_plan(startDate)\n3. Add date handling using date-fns@^2.30.0\n4. Implement calendar integration utilities",
+        "testStrategy": "1. Unit tests for meal planning operations\n2. Test date handling\n3. Verify calendar integration\n4. Test weekly plan generation",
+        "priority": "medium",
+        "dependencies": [
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "MCP Server Implementation",
+        "description": "Create main MCP server implementation with tool registration",
+        "details": "1. Implement main server using FastMCP\n2. Register all tool implementations\n3. Add error handling middleware\n4. Implement logging using winston@^3.11.0\n5. Add health check endpoints\n6. Configure server settings and timeouts",
+        "testStrategy": "1. Test server startup and shutdown\n2. Verify tool registration\n3. Test error handling\n4. Load testing with artillery",
+        "priority": "high",
+        "dependencies": [
+          14,
+          15,
+          16
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Claude Desktop Integration",
+        "description": "Implement Claude Desktop configuration and integration",
+        "details": "1. Create configuration file handling\n2. Implement path resolution for different OS platforms\n3. Add configuration validation\n4. Create integration documentation\n5. Implement auto-configuration utility\n6. Add configuration migration support",
+        "testStrategy": "1. Test configuration file generation\n2. Verify path handling on different OS\n3. Test configuration validation\n4. Integration testing with Claude Desktop",
+        "priority": "medium",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Debug Mode and Logging System",
+        "description": "Implement comprehensive logging and debugging functionality",
+        "details": "1. Implement debug mode using debug@^4.3.4\n2. Add structured logging with winston\n3. Create log rotation system\n4. Implement performance monitoring\n5. Add request/response logging\n6. Create debugging utilities and helpers",
+        "testStrategy": "1. Test debug mode activation\n2. Verify log generation and rotation\n3. Test performance monitoring\n4. Validate logging format",
+        "priority": "low",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Documentation and Testing",
+        "description": "Create comprehensive documentation and test suite",
+        "details": "1. Generate API documentation using TypeDoc\n2. Create usage examples\n3. Write integration tests\n4. Implement E2E tests using Jest\n5. Create contribution guidelines\n6. Add troubleshooting guide",
+        "testStrategy": "1. Verify documentation accuracy\n2. Run full test suite\n3. Test documentation examples\n4. Validate API references",
+        "priority": "medium",
+        "dependencies": [
+          18,
+          19
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "Security Implementation",
+        "description": "Implement security measures and credential protection",
+        "details": "1. Add credential encryption using crypto-js@^4.2.0\n2. Implement secure storage for tokens\n3. Add request signing\n4. Implement rate limiting\n5. Add security headers\n6. Create security documentation",
+        "testStrategy": "1. Test credential encryption\n2. Verify secure storage\n3. Test rate limiting\n4. Security penetration testing",
+        "priority": "high",
+        "dependencies": [
+          12
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "Performance Optimization",
+        "description": "Optimize server performance and resource usage",
+        "details": "1. Implement request caching using node-cache@^5.1.2\n2. Add connection pooling\n3. Optimize database queries\n4. Implement request batching\n5. Add compression using compression@^1.7.4\n6. Create performance monitoring",
+        "testStrategy": "1. Benchmark performance metrics\n2. Test caching effectiveness\n3. Measure response times\n4. Load testing scenarios",
+        "priority": "low",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-07T17:59:26.614Z",
+      "updated": "2025-07-07T19:05:49.774Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
