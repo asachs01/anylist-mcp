@@ -248,21 +248,20 @@ describe('Performance and Load Tests', () => {
       }
       
       // Test search performance
-      const searchRecipes = mockServer.getTool('search_recipes');
+      const searchRecipes = mockServer.getTool('search_recipes_by_ingredients');
       const startTime = Date.now();
-      
+
       const result = await searchRecipes?.execute({
-        query: 'recipe',
-        minRating: 3,
-        maxCookTime: 3600,
+        ingredients: ['flour'],
+        matchAll: false,
       });
-      
+
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
-      expect(result.content[0].text).toContain('recipes matching your criteria');
+
+      expect(result.content[0].text).toContain('recipes containing');
       expect(duration).toBeLessThan(500); // Search should be very fast
-      
+
       console.log(`Recipe search completed in ${duration}ms`);
     });
 

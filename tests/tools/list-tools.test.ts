@@ -742,10 +742,12 @@ describe('List Tools', () => {
 
     it('should handle null responses gracefully', async () => {
       vi.spyOn(anylistService, 'getLists').mockResolvedValue(null as any);
-      
+
       const tool = mockServer.getTool('get_lists');
-      
-      await expect(tool?.execute({})).rejects.toThrow();
+      const result = await tool?.execute({});
+
+      // get_lists has try/catch, so errors are returned as text content
+      expect(result.content[0].text).toContain('Error retrieving lists:');
     });
   });
 
