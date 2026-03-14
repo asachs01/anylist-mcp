@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Recipe creation silently failing** — Forked `anylist` library to fix two bugs that prevented recipe write operations from working (fixes [bobby060/anylist-mcp#22](https://github.com/bobby060/anylist-mcp/issues/22), upstream [codetheweb/anylist#37](https://github.com/codetheweb/anylist/issues/37)):
-  - Set `uid` on AnyList instance by extracting userId from `recipeDataResponse.linkedUsers`, with fallback to shopping list items (linkedUsers doesn't include account owner)
+  - Set `uid` on AnyList instance by extracting userId from `recipeDataResponse.linkedUsers`, with fallback to shopping list items, and final fallback to shopping list `creator` field (needed when all lists are empty)
   - Fixed `recipeIds` in recipe `performOperation()` to pass `[this.identifier]` instead of `this.recipeDataId`
 - **Meal event method name mismatches** — Corrected service layer to use actual library API names: `getMealPlanningCalendarEvents()`, `mealPlanningCalendarEvents`, and `createEvent()` instead of non-existent `getMealEvents()`, `mealEvents`, and `createMealEvent()`
 - **Delete operations always throwing "not supported"** — `deleteRecipe` and `deleteMealEvent` now call the library's `recipe.delete()` and `event.delete()` methods instead of throwing errors
