@@ -11,9 +11,9 @@ export interface CredentialsData {
 }
 
 export interface CredentialsOptions {
-  filePath?: string;
-  autoSave?: boolean;
-  validateOnLoad?: boolean;
+  filePath?: string | undefined;
+  autoSave?: boolean | undefined;
+  validateOnLoad?: boolean | undefined;
 }
 
 export class CredentialsManager {

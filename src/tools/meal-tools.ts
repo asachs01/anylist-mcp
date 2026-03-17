@@ -3,8 +3,6 @@ import { z } from 'zod';
 import { AnyListService } from '../services/anylist-service.js';
 import {
   CreateMealEventSchema,
-  UpdateMealEventSchema,
-  DeleteMealEventSchema,
   GetMealEventsSchema,
 } from '../utils/validation.js';
 
@@ -115,7 +113,14 @@ export function registerMealTools(server: FastMCP, anylistService: AnyListServic
   server.addTool({
     name: 'update_meal_event',
     description: 'Update an existing meal planning event',
-    parameters: UpdateMealEventSchema,
+    parameters: z.object({
+      eventId: z.string().describe('The ID of the meal event to update'),
+      title: z.string().optional().describe('New title for the meal event'),
+      date: z.string().optional().describe('New date for the meal event (ISO date string)'),
+      details: z.string().optional().describe('New details for the meal event'),
+      recipeId: z.string().optional().describe('New recipe ID to assign'),
+      recipeScaleFactor: z.number().optional().describe('New recipe scale factor'),
+    }),
     execute: async ({ eventId, ...updates }) => {
       // Get the current event to preserve existing data
       const currentEvent = await anylistService.getMealEvent(eventId);
@@ -124,13 +129,15 @@ export function registerMealTools(server: FastMCP, anylistService: AnyListServic
       }
 
       // Create updated event with merged data
-      const updatedEvent = await anylistService.createMealEvent({
+      const mergedData = {
         title: updates.title || currentEvent.title || 'Meal Event',
         date: updates.date || currentEvent.date.toISOString().split('T')[0],
         details: updates.details !== undefined ? updates.details : currentEvent.details,
         recipeId: updates.recipeId !== undefined ? updates.recipeId : currentEvent.recipeId,
         recipeScaleFactor: updates.recipeScaleFactor !== undefined ? updates.recipeScaleFactor : currentEvent.recipeScaleFactor,
-      });
+      };
+      
+      const updatedEvent = await anylistService.createMealEvent(mergedData);
 
       return {
         content: [
@@ -147,14 +154,16 @@ export function registerMealTools(server: FastMCP, anylistService: AnyListServic
   server.addTool({
     name: 'delete_meal_event',
     description: 'Delete a meal planning event',
-    parameters: DeleteMealEventSchema,
+    parameters: z.object({
+      eventId: z.string().describe('The ID of the meal event to delete'),
+    }),
     execute: async ({ eventId }) => {
       await anylistService.deleteMealEvent(eventId);
       return {
         content: [
           {
             type: 'text',
-            text: `Successfully deleted meal event`,
+            text: 'Successfully deleted meal event',
           },
         ],
       };
@@ -378,14 +387,14 @@ export function registerMealTools(server: FastMCP, anylistService: AnyListServic
 
       const successText = createdEvents.length > 0 
         ? `Successfully created ${createdEvents.length} meal events:\n${createdEvents
-            .map(event => `• ${event.title} (${event.date.toISOString().split('T')[0]})`)
-            .join('\n')}`
+          .map(event => `• ${event.title} (${event.date.toISOString().split('T')[0]})`)
+          .join('\n')}`
         : '';
 
       const errorText = errors.length > 0 
         ? `\n\nFailed to create ${errors.length} events:\n${errors
-            .map(({ event, error }) => `• ${event.title}: ${error}`)
-            .join('\n')}`
+          .map(({ event, error }) => `• ${event.title}: ${error}`)
+          .join('\n')}`
         : '';
 
       return {
@@ -423,7 +432,7 @@ export function registerMealTools(server: FastMCP, anylistService: AnyListServic
       if (event.recipeId) {
         try {
           const recipe = await anylistService.getRecipe(event.recipeId);
-          recipeDetails = `\n\n**Recipe Details:**\n` +
+          recipeDetails = '\n\n**Recipe Details:**\n' +
             `• Name: ${recipe.name}\n` +
             `• Servings: ${recipe.servings || 'Not specified'}\n` +
             `• Prep Time: ${recipe.prepTime ? Math.round(recipe.prepTime / 60) + ' minutes' : 'Not specified'}\n` +
@@ -432,7 +441,7 @@ export function registerMealTools(server: FastMCP, anylistService: AnyListServic
             `• Ingredients: ${recipe.ingredients.length} items\n` +
             `• Instructions: ${recipe.instructions.length} steps`;
         } catch (error) {
-          recipeDetails = `\n\n**Recipe Details:** Unable to load recipe details`;
+          recipeDetails = '\n\n**Recipe Details:** Unable to load recipe details';
         }
       }
 
@@ -440,7 +449,7 @@ export function registerMealTools(server: FastMCP, anylistService: AnyListServic
         content: [
           {
             type: 'text',
-            text: `**Meal Event Details:**\n\n` +
+            text: '**Meal Event Details:**\n\n' +
               `• **Title:** ${event.title}\n` +
               `• **Date:** ${event.date.toISOString().split('T')[0]}\n` +
               `• **ID:** ${event.identifier}\n` +
@@ -532,7 +541,7 @@ export function registerMealTools(server: FastMCP, anylistService: AnyListServic
           content: [
             {
               type: 'text',
-              text: `No meal events found for the specified date range.`,
+              text: 'No meal events found for the specified date range.',
             },
           ],
         };
@@ -555,14 +564,14 @@ export function registerMealTools(server: FastMCP, anylistService: AnyListServic
 
       const successText = deletedEvents.length > 0 
         ? `Successfully deleted ${deletedEvents.length} meal events:\n${deletedEvents
-            .map(event => `• ${event.title} (${event.date.toISOString().split('T')[0]})`)
-            .join('\n')}`
+          .map(event => `• ${event.title} (${event.date.toISOString().split('T')[0]})`)
+          .join('\n')}`
         : '';
 
       const errorText = errors.length > 0 
         ? `\n\nFailed to delete ${errors.length} events:\n${errors
-            .map(({ event, error }) => `• ${event.title}: ${error}`)
-            .join('\n')}`
+          .map(({ event, error }) => `• ${event.title}: ${error}`)
+          .join('\n')}`
         : '';
 
       return {

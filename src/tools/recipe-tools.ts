@@ -170,7 +170,7 @@ export function registerRecipeTools(server: FastMCP, anylistService: AnyListServ
         content: [
           {
             type: 'text',
-            text: `Successfully deleted recipe`,
+            text: 'Successfully deleted recipe',
           },
         ],
       };
@@ -231,7 +231,7 @@ export function registerRecipeTools(server: FastMCP, anylistService: AnyListServ
         content: [
           {
             type: 'text',
-            text: `Successfully added recipe to collection`,
+            text: 'Successfully added recipe to collection',
           },
         ],
       };
@@ -401,7 +401,7 @@ export function registerRecipeTools(server: FastMCP, anylistService: AnyListServ
               `**Ingredients (${recipe.ingredients.length}):**\n${recipe.ingredients
                 .map((ing) => `- ${ing.quantity || ''} ${ing.name}`)
                 .join('\n')}\n\n` +
-              `*Note: Nutritional information depends on specific brands and preparation methods used.*`,
+              '*Note: Nutritional information depends on specific brands and preparation methods used.*',
           },
         ],
       };

@@ -26,13 +26,29 @@ A Model Context Protocol (MCP) server that integrates with AnyList, enabling Cla
 - **Weekly Planning**: Get comprehensive weekly meal plans
 - **Calendar Integration**: Schedule meals with dates and meal types
 
-## Prerequisites
+## Documentation
+
+📚 **Complete documentation is available in the `/docs` directory:**
+
+- **[Setup Guide](docs/SETUP_GUIDE.md)** - Comprehensive installation and configuration
+- **[API Reference](docs/API_REFERENCE.md)** - Complete tool documentation with examples
+- **[Authentication Guide](docs/AUTHENTICATION.md)** - Secure credential management
+- **[Usage Examples](docs/EXAMPLES.md)** - Practical workflows and use cases
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Contributing and development
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Project Completion](docs/PROJECT_COMPLETION.md)** - Final deployment and verification procedures
+- **[Test Suite Documentation](docs/TEST_SUITE.md)** - Comprehensive testing guide and procedures
+- **[Type Documentation](docs/types-documentation.md)** - TypeScript types and validation
+
+## Quick Start
+
+### Prerequisites
 
 - Node.js 18.0.0 or higher
 - An AnyList account with valid credentials
 - Claude Desktop (for MCP integration) or another MCP-compatible client
 
-## Installation
+### Installation
 
 1. **Clone the repository:**
    ```bash
@@ -50,33 +66,29 @@ A Model Context Protocol (MCP) server that integrates with AnyList, enabling Cla
    npm run build
    ```
 
-## Configuration
+## Quick Configuration
 
-### Environment Variables
+**For detailed setup instructions, see the [Setup Guide](docs/SETUP_GUIDE.md)**
 
-Create a `.env` file in the project root or set these environment variables:
+### Basic Environment Setup
+
+Create a `.env` file with your AnyList credentials:
 
 ```bash
 ANYLIST_EMAIL=your-email@example.com
 ANYLIST_PASSWORD=your-password
-ANYLIST_CREDENTIALS_FILE=.anylist_credentials  # Optional, defaults to .anylist_credentials
 ```
-
-**Security Note**: Never commit your `.env` file or credentials to version control. The `.anylist_credentials` file is automatically added to `.gitignore`.
 
 ### Claude Desktop Integration
 
-Add the following to your Claude Desktop configuration file:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
 ```json
 {
   "mcpServers": {
     "anylist": {
-      "command": "npx",
-      "args": ["tsx", "/path/to/anylist-mcp/src/index.ts"],
+      "command": "node",
+      "args": ["/path/to/anylist-mcp/dist/index.js"],
       "env": {
         "ANYLIST_EMAIL": "your-email@example.com",
         "ANYLIST_PASSWORD": "your-password"
@@ -86,158 +98,119 @@ Add the following to your Claude Desktop configuration file:
 }
 ```
 
-Replace `/path/to/anylist-mcp` with the actual path to your project directory.
+**For comprehensive setup instructions including:**
+- Multiple authentication methods
+- Platform-specific configurations
+- Troubleshooting steps
+- Security best practices
+
+**👉 See the [Setup Guide](docs/SETUP_GUIDE.md)**
 
 ## Usage
 
-### Starting the Server
+**For comprehensive usage examples and workflows, see [Usage Examples](docs/EXAMPLES.md)**
 
-```bash
-# Development mode
-npm run dev
-
-# Production mode
-npm start
-```
-
-### Available MCP Tools
+### Quick Examples
 
 Once connected to Claude Desktop, you can use natural language to interact with AnyList:
 
-#### List Management Examples
-- *"Show me all my AnyList lists"*
-- *"Add milk and bread to my grocery list"*
-- *"Check off eggs from my shopping list"*
-- *"Remove bananas from the grocery list"*
-- *"Uncheck all items in my weekly shopping list"*
+#### List Management
+```
+Show me all my AnyList lists
+Add milk and bread to my grocery list
+Check off eggs from my shopping list
+```
 
-#### Recipe Management Examples
-- *"Show me all my recipes"*
-- *"Create a new recipe for chocolate chip cookies"*
-- *"Get the details for my lasagna recipe"*
-- *"Import a recipe from this URL: https://example.com/recipe"*
-- *"Add my pasta recipe to the Italian collection"*
+#### Recipe Management
+```
+Show me all my recipes
+Create a new recipe for chocolate chip cookies
+Get the details for my lasagna recipe
+```
 
-#### Meal Planning Examples
-- *"What meals do I have planned for today?"*
-- *"Schedule chicken dinner for tomorrow"*
-- *"Show me my meal plan for this week"*
-- *"Assign my lasagna recipe to Sunday dinner"*
+#### Meal Planning
+```
+What meals do I have planned for today?
+Schedule chicken dinner for tomorrow
+Show me my meal plan for this week
+```
+
+**👉 For detailed workflows, advanced examples, and best practices, see [Usage Examples](docs/EXAMPLES.md)**
 
 ## Development
 
-### Project Structure
+**For comprehensive development information, see [Developer Guide](docs/DEVELOPER_GUIDE.md)**
 
-```
-src/
-├── index.ts              # Main server entry point
-├── services/
-│   └── anylist-service.ts # AnyList API wrapper service
-├── tools/                # MCP tool definitions
-│   ├── list-tools.ts     # List management tools
-│   ├── recipe-tools.ts   # Recipe management tools
-│   └── meal-tools.ts     # Meal planning tools
-├── types/
-│   └── index.ts          # TypeScript type definitions
-└── utils/
-    └── validation.ts     # Zod validation schemas
-```
-
-### Running Tests
+### Quick Start
 
 ```bash
-# Run all tests
+# Install dependencies
+npm install
+
+# Run in development mode
+npm run dev
+
+# Run tests
 npm test
 
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-### Code Quality
-
-```bash
-# Type checking
+# Type check
 npm run type-check
 
-# Linting
+# Lint code
 npm run lint
-
-# Fix linting issues
-npm run lint:fix
 ```
+
+**👉 For architecture details, contribution guidelines, and development workflows, see [Developer Guide](docs/DEVELOPER_GUIDE.md)**
 
 ## API Reference
 
-### List Tools
+**For complete API documentation, see [API Reference](docs/API_REFERENCE.md)**
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_lists` | Retrieve all lists | None |
-| `add_item` | Add item to list | `listId`, `name`, `quantity?`, `details?` |
-| `update_item` | Update existing item | `listId`, `itemId`, `name?`, `quantity?`, `details?`, `checked?` |
-| `remove_item` | Remove item from list | `listId`, `itemId` |
-| `toggle_item` | Toggle item checked status | `listId`, `itemId` |
-| `uncheck_all_items` | Uncheck all items in list | `listId` |
+### Available Tools
 
-### Recipe Tools
+- **Authentication Tools** - Manage credentials and authentication
+- **List Management** - Create, view, and manage grocery lists and items
+- **Recipe Management** - Create, update, and organize recipes
+- **Meal Planning** - Schedule meals and plan weekly menus
+- **Bulk Operations** - Efficient multi-item operations
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_recipes` | Get all recipes | None |
-| `get_recipe` | Get specific recipe | `recipeId` |
-| `create_recipe` | Create new recipe | `name`, `ingredients`, `instructions`, `servings?`, etc. |
-| `update_recipe` | Update existing recipe | `recipeId`, `name?`, `ingredients?`, etc. |
-| `delete_recipe` | Delete recipe | `recipeId` |
-| `import_recipe_from_url` | Import from URL | `url` |
-
-### Meal Planning Tools
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_meal_events` | Get all meal events | None |
-| `get_meal_events_by_date` | Get meals for date | `date` |
-| `create_meal_event` | Create meal event | `title`, `date`, `mealType?`, `recipeId?` |
-| `delete_meal_event` | Delete meal event | `eventId` |
-| `get_weekly_meal_plan` | Get weekly plan | `startDate` |
+**👉 For detailed tool documentation with parameters and examples, see [API Reference](docs/API_REFERENCE.md)**
 
 ## Troubleshooting
 
-### Common Issues
+**For comprehensive troubleshooting, see [Troubleshooting Guide](docs/TROUBLESHOOTING.md)**
 
-1. **Authentication Errors**
-   - Verify your AnyList email and password are correct
-   - Check that environment variables are properly set
-   - Try logging into AnyList web interface to verify credentials
+### Quick Solutions
 
-2. **Connection Issues**
-   - Ensure you have a stable internet connection
-   - Check if AnyList services are operational
-   - Verify the credentials file permissions
-
-3. **Claude Desktop Integration**
-   - Ensure the path to the project is correct in the configuration
-   - Check that Node.js and npm are in your PATH
-   - Restart Claude Desktop after configuration changes
-
-### Debug Mode
-
-Set the `DEBUG` environment variable to enable verbose logging:
-
-```bash
-DEBUG=anylist-mcp npm run dev
+**Authentication Issues:**
 ```
+# In Claude Desktop
+Check my AnyList authentication status
+```
+
+**Connection Problems:**
+```bash
+# Test connectivity
+ping api.anylist.com
+```
+
+**Configuration Issues:**
+```bash
+# Validate configuration
+npm run type-check
+```
+
+**👉 For detailed solutions to common issues, see [Troubleshooting Guide](docs/TROUBLESHOOTING.md)**
 
 ## Contributing
 
+**For contribution guidelines, see [Developer Guide](docs/DEVELOPER_GUIDE.md)**
+
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
+2. Create a feature branch
 3. Make your changes and add tests
-4. Ensure all tests pass: `npm test`
-5. Update the CHANGELOG.md
-6. Submit a pull request
+4. Ensure all tests pass
+5. Submit a pull request
 
 ## License
 

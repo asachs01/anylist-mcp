@@ -6,9 +6,9 @@ export interface AnyListCredentials {
 }
 
 export interface AnyListConfig {
-  email?: string;
-  password?: string;
-  credentialsFile?: string;
+  email?: string | undefined;
+  password?: string | undefined;
+  credentialsFile?: string | undefined;
 }
 
 // List-related types
@@ -259,4 +259,59 @@ export interface ToolContext {
   };
   reportProgress?: (progress: { progress: number; total: number }) => Promise<void>;
   streamContent?: (content: { type: string; text: string }) => Promise<void>;
+}
+
+// Service configuration types
+export interface ServiceOptions {
+  enableCaching?: boolean;
+  enableMetrics?: boolean;
+  enableRateLimit?: boolean;
+  timeout?: number;
+  apiBaseUrl?: string;
+  rateLimitConfig?: RateLimitOptions;
+  cacheSettings?: {
+    defaultTtl: number;
+    maxEntries: number;
+  };
+}
+
+export interface RetryOptions {
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+  backoffFactor: number;
+}
+
+export interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  expiresAt: number;
+}
+
+export interface RateLimitOptions {
+  tokensPerSecond: number;
+  maxTokens: number;
+  refillIntervalMs: number;
+}
+
+export interface PerformanceMetrics {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  averageResponseTime: number;
+  cacheHits: number;
+  cacheMisses: number;
+  lastRequestTimestamp: number;
+  requestCount: number;
+  totalResponseTime: number;
+  errorRate: number;
+  cacheHitRate: number;
+}
+
+export interface RequestQueueItem {
+  operation: () => Promise<unknown>;
+  resolve: (value: unknown) => void;
+  reject: (error: Error) => void;
+  priority: number;
+  timestamp: number;
 } 

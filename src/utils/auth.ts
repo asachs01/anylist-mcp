@@ -1,5 +1,8 @@
 import { UserError } from 'fastmcp';
 import { configManager, type AnyListConfig } from './config.js';
+import { securityManager } from './security.js';
+import { secureCredentialsManager } from './secure-credentials.js';
+import { DefaultRateLimiters } from './rate-limiter.js';
 
 export interface AuthenticationResult {
   isAuthenticated: boolean;
@@ -8,10 +11,10 @@ export interface AuthenticationResult {
 }
 
 export interface AuthenticationOptions {
-  email?: string;
-  password?: string;
-  credentialsFile?: string;
-  saveCredentials?: boolean;
+  email?: string | undefined;
+  password?: string | undefined;
+  credentialsFile?: string | undefined;
+  saveCredentials?: boolean | undefined;
 }
 
 export class AuthenticationManager {
@@ -33,6 +36,21 @@ export class AuthenticationManager {
    * Authenticate with AnyList using various credential sources
    */
   async authenticate(options: AuthenticationOptions = {}): Promise<AuthenticationResult> {
+    const identifier = options.email || 'unknown';
+    
+    // Check rate limiting for authentication attempts
+    const authLimiter = DefaultRateLimiters.getAuthLimiter();
+    const rateLimitResult = authLimiter.checkRequest({ identifier });
+    
+    if (!rateLimitResult.allowed) {
+      securityManager.auditLog(
+        'AUTH_RATE_LIMITED',
+        `Authentication rate limited for ${identifier}`,
+        'medium'
+      );
+      throw new UserError(`Authentication rate limited. Try again in ${rateLimitResult.retryAfter} seconds.`);
+    }
+
     // Return existing authentication if already in progress
     if (this.authPromise) {
       return this.authPromise;
@@ -51,31 +69,82 @@ export class AuthenticationManager {
   }
 
   private async _authenticate(options: AuthenticationOptions): Promise<AuthenticationResult> {
+    const identifier = options.email || 'unknown';
+    const authLimiter = DefaultRateLimiters.getAuthLimiter();
+    
     try {
+      // Validate input credentials
+      if (options.email && !securityManager.validateInput(options.email, 'email')) {
+        authLimiter.recordRequest(identifier, false);
+        throw new UserError('Invalid email format');
+      }
+      
+      if (options.password && !securityManager.validateInput(options.password, 'password')) {
+        authLimiter.recordRequest(identifier, false);
+        throw new UserError('Invalid password format');
+      }
+
       // Load configuration from all sources
       const config = await configManager.loadConfig({
-        email: options.email,
-        password: options.password,
-        credentialsFile: options.credentialsFile,
+        email: options.email || undefined,
+        password: options.password || undefined,
+        credentialsFile: options.credentialsFile || undefined,
       });
 
       // Validate that we have required credentials
       if (!config.email || !config.password) {
+        authLimiter.recordRequest(identifier, false);
+        securityManager.auditLog(
+          'AUTH_MISSING_CREDENTIALS',
+          `Authentication failed: missing credentials for ${identifier}`,
+          'medium'
+        );
         throw new UserError('Email and password are required for authentication');
       }
 
-      // Save credentials if requested
+      // Save credentials securely if requested
       if (options.saveCredentials && options.email && options.password) {
-        await configManager.saveCredentials(
-          { email: options.email, password: options.password },
-          options.credentialsFile
-        );
+        try {
+          await secureCredentialsManager.saveCredentials(
+            { 
+              email: options.email, 
+              password: options.password,
+              timestamp: new Date().toISOString(),
+              lastUsed: new Date().toISOString(),
+            },
+            { 
+              filePath: options.credentialsFile,
+              backupOnSave: true,
+            }
+          );
+          
+          securityManager.auditLog(
+            'CREDENTIALS_SAVED_SECURELY',
+            `Secure credentials saved for ${identifier}`,
+            'low'
+          );
+        } catch (saveError) {
+          // Log error but don't fail authentication
+          securityManager.auditLog(
+            'CREDENTIALS_SAVE_FAILED',
+            `Failed to save secure credentials for ${identifier}: ${saveError instanceof Error ? saveError.message : String(saveError)}`,
+            'medium'
+          );
+        }
       }
 
       // Store successful authentication
       this.isAuthenticated = true;
       this.currentConfig = config;
       this.authPromise = null;
+      
+      // Record successful authentication
+      authLimiter.recordRequest(identifier, true);
+      securityManager.auditLog(
+        'AUTH_SUCCESS',
+        `Successful authentication for ${config.email}`,
+        'low'
+      );
 
       return {
         isAuthenticated: true,
@@ -85,6 +154,14 @@ export class AuthenticationManager {
       this.isAuthenticated = false;
       this.currentConfig = null;
       this.authPromise = null;
+      
+      // Record failed authentication
+      authLimiter.recordRequest(identifier, false);
+      securityManager.auditLog(
+        'AUTH_FAILED',
+        `Authentication failed for ${identifier}: ${error instanceof Error ? error.message : String(error)}`,
+        'medium'
+      );
 
       const errorMessage = error instanceof Error ? error.message : String(error);
       return {
@@ -135,9 +212,9 @@ export class AuthenticationManager {
     hasCredentialsFile: boolean;
     hasEnvironmentVars: boolean;
     configSource: string;
-  } {
+    } {
     const hasCredentialsFile = configManager.credentialsFileExists();
-    const hasEnvironmentVars = !!(process.env.ANYLIST_EMAIL && process.env.ANYLIST_PASSWORD);
+    const hasEnvironmentVars = !!(process.env['ANYLIST_EMAIL'] && process.env['ANYLIST_PASSWORD']);
     
     let configSource = 'none';
     if (this.currentConfig) {
@@ -163,7 +240,7 @@ export class AuthenticationManager {
    */
   async validateCredentials(email: string, password: string): Promise<{ isValid: boolean; error?: string }> {
     try {
-      const config = configManager.validateConfig({ email, password });
+      configManager.validateConfig({ email, password });
       return { isValid: true };
     } catch (error) {
       return {

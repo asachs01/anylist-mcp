@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { UserError } from 'fastmcp';
+import { secureCredentialsManager } from './secure-credentials.js';
 
 // Configuration schema validation
 const AnyListConfigSchema = z.object({
@@ -23,6 +24,14 @@ const EnvironmentConfigSchema = z.object({
   ANYLIST_TIMEOUT: z.string().transform((val) => parseInt(val, 10)).optional(),
   ANYLIST_RETRY_ATTEMPTS: z.string().transform((val) => parseInt(val, 10)).optional(),
   ANYLIST_RETRY_DELAY: z.string().transform((val) => parseInt(val, 10)).optional(),
+  // Server configuration
+  NODE_ENV: z.enum(['development', 'production', 'test']).optional(),
+  LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).optional(),
+  LOG_DIR: z.string().optional(),
+  MCP_SERVER_NAME: z.string().optional(),
+  MCP_SERVER_VERSION: z.string().optional(),
+  HEALTH_CHECK_INTERVAL: z.string().transform((val) => parseInt(val, 10)).optional(),
+  PERFORMANCE_MONITORING: z.string().transform((val) => val === 'true').optional(),
 });
 
 export type AnyListConfig = z.infer<typeof AnyListConfigSchema>;
@@ -30,13 +39,13 @@ export type EnvironmentConfig = z.infer<typeof EnvironmentConfigSchema>;
 
 export interface ConfigurationOptions {
   // Priority order: passed config > environment variables > credentials file > defaults
-  email?: string;
-  password?: string;
-  credentialsFile?: string;
-  apiBaseUrl?: string;
-  timeout?: number;
-  retryAttempts?: number;
-  retryDelay?: number;
+  email?: string | undefined;
+  password?: string | undefined;
+  credentialsFile?: string | undefined;
+  apiBaseUrl?: string | undefined;
+  timeout?: number | undefined;
+  retryAttempts?: number | undefined;
+  retryDelay?: number | undefined;
 }
 
 export class ConfigurationManager {
@@ -67,7 +76,7 @@ export class ConfigurationManager {
       
       // Load from credentials file
       const credentialsFile = options.credentialsFile || envConfig.ANYLIST_CREDENTIALS_FILE || this.defaultCredentialsFile;
-      const fileConfig = this.loadFromCredentialsFile(credentialsFile);
+      const fileConfig = await this.loadFromCredentialsFile(credentialsFile);
 
       // Merge configurations with priority order
       const mergedConfig = {
@@ -122,14 +131,35 @@ export class ConfigurationManager {
   }
 
   /**
-   * Load configuration from credentials file
+   * Load configuration from credentials file (supports both encrypted and legacy formats)
    */
-  private loadFromCredentialsFile(credentialsFile: string): Partial<AnyListConfig> {
+  private async loadFromCredentialsFile(credentialsFile: string): Promise<Partial<AnyListConfig>> {
     if (!existsSync(credentialsFile)) {
       return {};
     }
 
     try {
+      // First try to load as encrypted credentials
+      if (credentialsFile.includes('encrypted') || process.env.ANYLIST_ENCRYPTION_KEY) {
+        try {
+          const secureCredentials = await secureCredentialsManager.loadCredentials({
+            filePath: credentialsFile,
+            validateOnLoad: false,
+          });
+          
+          if (secureCredentials) {
+            return {
+              email: secureCredentials.email,
+              password: secureCredentials.password,
+            };
+          }
+        } catch (encryptionError) {
+          // Fall back to legacy format if encryption fails
+          console.warn('Failed to load encrypted credentials, trying legacy format:', encryptionError);
+        }
+      }
+
+      // Fall back to legacy unencrypted format
       const fileContent = readFileSync(credentialsFile, 'utf8');
       const parsed = JSON.parse(fileContent);
       return parsed;
@@ -203,9 +233,84 @@ export class ConfigurationManager {
       }
     }
   }
+
+  /**
+   * Get server configuration settings
+   */
+  getServerConfig() {
+    const envConfig = this.loadFromEnvironment();
+    
+    return {
+      nodeEnv: envConfig.NODE_ENV || 'development',
+      logLevel: envConfig.LOG_LEVEL || 'info',
+      logDir: envConfig.LOG_DIR || join(homedir(), '.anylist-mcp', 'logs'),
+      serverName: envConfig.MCP_SERVER_NAME || 'AnyList MCP Server',
+      serverVersion: envConfig.MCP_SERVER_VERSION || '1.0.0',
+      healthCheckInterval: envConfig.HEALTH_CHECK_INTERVAL || 60000,
+      performanceMonitoring: envConfig.PERFORMANCE_MONITORING || false,
+    };
+  }
+
+  /**
+   * Check if running in production mode
+   */
+  isProduction(): boolean {
+    return this.getServerConfig().nodeEnv === 'production';
+  }
+
+  /**
+   * Get log level
+   */
+  getLogLevel(): 'error' | 'warn' | 'info' | 'http' | 'debug' {
+    return this.getServerConfig().logLevel;
+  }
+
+  /**
+   * Get log directory and ensure it exists
+   */
+  getLogDirectory(): string {
+    const logDir = this.getServerConfig().logDir;
+    if (!existsSync(logDir)) {
+      mkdirSync(logDir, { recursive: true });
+    }
+    return logDir;
+  }
+
+  /**
+   * Get server name
+   */
+  getServerName(): string {
+    return this.getServerConfig().serverName;
+  }
+
+  /**
+   * Get server version
+   */
+  getServerVersion(): string {
+    return this.getServerConfig().serverVersion;
+  }
+
+  /**
+   * Get health check interval
+   */
+  getHealthCheckInterval(): number {
+    return this.getServerConfig().healthCheckInterval;
+  }
+
+  /**
+   * Check if performance monitoring is enabled
+   */
+  isPerformanceMonitoringEnabled(): boolean {
+    return this.getServerConfig().performanceMonitoring;
+  }
 }
 
 /**
  * Singleton instance for easy access
  */
 export const configManager = ConfigurationManager.getInstance();
+
+/**
+ * Convenience reference to configuration methods
+ */
+export const config = configManager;

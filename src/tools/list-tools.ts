@@ -35,9 +35,9 @@ export function registerListTools(server: FastMCP, anylistService: AnyListServic
                     `  Items: ${list.items.length}\n` +
                     (includeItems
                       ? `  ${list.items
-                          .slice(0, 5)
-                          .map((item) => `  - ${item.checked ? '✓' : '○'} ${item.name}`)
-                          .join('\n')}\n` +
+                        .slice(0, 5)
+                        .map((item) => `  - ${item.checked ? '✓' : '○'} ${item.name}`)
+                        .join('\n')}\n` +
                         (list.items.length > 5 ? `  ... and ${list.items.length - 5} more items\n` : '')
                       : '')
                 )
@@ -65,7 +65,7 @@ export function registerListTools(server: FastMCP, anylistService: AnyListServic
     parameters: CreateListSchema,
     execute: async (request) => {
       try {
-        const list = await anylistService.createList(request);
+        const list = await anylistService.createList(request as any);
         return {
           content: [
             {
@@ -94,7 +94,7 @@ export function registerListTools(server: FastMCP, anylistService: AnyListServic
     parameters: AddItemSchema,
     execute: async (request) => {
       try {
-        const item = await anylistService.addItem(request);
+        const item = await anylistService.addItem(request as any);
         return {
           content: [
             {
@@ -125,7 +125,7 @@ export function registerListTools(server: FastMCP, anylistService: AnyListServic
     parameters: UpdateItemSchema,
     execute: async (request) => {
       try {
-        const item = await anylistService.updateItem(request);
+        const item = await anylistService.updateItem(request as any);
         const updates = [];
         if (request.name !== undefined) updates.push(`name: "${item.name}"`);
         if (request.quantity !== undefined) updates.push(`quantity: ${item.quantity}`);
@@ -167,7 +167,7 @@ export function registerListTools(server: FastMCP, anylistService: AnyListServic
           content: [
             {
               type: 'text',
-              text: `Successfully removed item from list`,
+              text: 'Successfully removed item from list',
             },
           ],
         };
@@ -243,7 +243,7 @@ export function registerListTools(server: FastMCP, anylistService: AnyListServic
           content: [
             {
               type: 'text',
-              text: `Successfully unchecked all items in the list`,
+              text: 'Successfully unchecked all items in the list',
             },
           ],
         };
@@ -538,4 +538,4 @@ export function registerListTools(server: FastMCP, anylistService: AnyListServic
       }
     },
   });
-} 
+}
