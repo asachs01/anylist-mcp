@@ -239,6 +239,10 @@ async function handleClientCredentialsGrant(req, res) {
     return res.status(401).json({ error: "invalid_client" });
   }
 
+  // Confidential clients are trusted first-party headless integrations (agents),
+  // so issue a long-lived access token — they can re-mint via client_credentials
+  // at will, and header-auth MCP clients cannot refresh a short-lived token.
+  const CLIENT_CREDENTIALS_TTL = 60 * 60 * 24 * 365; // 1 year
   const accessToken = randomBytes(32).toString("hex");
   const refreshToken = randomBytes(32).toString("hex");
   saveOAuthTokens({
@@ -247,13 +251,14 @@ async function handleClientCredentialsGrant(req, res) {
     userId: client.user_id,
     clientId: client_id,
     scope: "mcp",
+    accessTtl: CLIENT_CREDENTIALS_TTL,
   });
 
   console.log(`[oauth] client_credentials token issued for client_id=${client_id.slice(0, 8)}… user_id=${client.user_id}`);
   res.json({
     access_token: accessToken,
     token_type: "Bearer",
-    expires_in: 3600,
+    expires_in: CLIENT_CREDENTIALS_TTL,
     scope: "mcp",
   });
 }
