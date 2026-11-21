@@ -1,4 +1,7 @@
 import AnyList from '../anylist-js/lib/index.js';
+import path from 'node:path';
+import os from 'node:os';
+import crypto from 'node:crypto';
 import Item from '../anylist-js/lib/item.js';
 import { normalizeRecipe } from './recipe-normalizer.js';
 
@@ -57,22 +60,39 @@ class AnyListClient {
     try {
       // Create AnyList client if not already authenticated
       if (!this.client) {
-        this.client = new AnyList({
+        // Back off after a 429 instead of hammering AnyList's auth endpoint
+        if (this._cooldownUntil && Date.now() < this._cooldownUntil) {
+          throw new Error(`AnyList rate-limited us; retrying after ${new Date(this._cooldownUntil).toISOString()}`);
+        }
+        const client = new AnyList({
           email: username,
-          password: password
+          password: password,
+          // Persist tokens on the /data volume so restarts reuse them instead of re-logging in
+          credentialsFile: path.join(process.env.DATA_DIR || os.homedir(),
+            `.anylist_credentials_${crypto.createHash('sha256').update(username).digest('hex').slice(0, 12)}`),
         });
-
-        // Authenticate
-        console.error(`Connecting to AnyList as ${username}...`);
-        await this.client.login();
+        try {
+          console.error(`Connecting to AnyList as ${username}...`);
+          await client.login();
+          await client.getLists();
+        } catch (err) {
+          // Do NOT keep a half-initialised client: it would make every later call
+          // skip login and report 'List not found. Available lists: (empty)'
+          client.teardown();
+          if (err?.response?.statusCode === 429) this._cooldownUntil = Date.now() + 15 * 60 * 1000;
+          throw err;
+        }
+        this.client = client;
         console.error('Successfully authenticated with AnyList');
-
-        await this.client.getLists();
       }
 
-      // Find the target list
+      // Find the target list (refresh once in case the cached lists are stale/empty)
       console.error(`Looking for list: "${targetListName}"`);
       this.targetList = this.client.getListByName(targetListName);
+      if (!this.targetList) {
+        await this.client.getLists();
+        this.targetList = this.client.getListByName(targetListName);
+      }
 
       if (!this.targetList) {
         const error = new Error(`List "${targetListName}" not found. Available lists: ${this.getAvailableListNames().join(', ')}`);
@@ -89,6 +109,12 @@ class AnyListClient {
       console.error(wrappedError.message);
       throw wrappedError;
     }
+  }
+
+  teardown() {
+    if (this.client) this.client.teardown();
+    this.client = null;
+    this.targetList = null;
   }
 
   getAvailableListNames() {

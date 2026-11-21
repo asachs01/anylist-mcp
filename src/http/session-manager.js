@@ -47,6 +47,7 @@ export function evictSession(userId) {
   const session = sessions.get(userId);
   if (session) {
     clearTimeout(session.timer);
+    session.client.teardown(); // close the AnyList websocket + heartbeat
     sessions.delete(userId);
   }
 }
@@ -54,6 +55,7 @@ export function evictSession(userId) {
 function resetIdleTimer(userId, session) {
   clearTimeout(session.timer);
   session.timer = setTimeout(() => {
+    session.client.teardown(); // otherwise the websocket/heartbeat leaks forever
     sessions.delete(userId);
   }, IDLE_TIMEOUT_MS);
 }
