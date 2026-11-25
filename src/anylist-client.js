@@ -4,6 +4,7 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import Item from '../anylist-js/lib/item.js';
 import { normalizeRecipe } from './recipe-normalizer.js';
+import { installUserDataCache } from './userdata-cache.js';
 
 // Patch Item._encode to not include 'quantity' field which doesn't exist in protobuf schema
 Item.prototype._encode = function() {
@@ -33,6 +34,7 @@ class AnyListClient {
     this._username = username || null;
     this._password = password || null;
     this.defaultListName = defaultListName || null;
+    this._cache = null;
   }
 
   async connect(listName = null) {
@@ -50,6 +52,22 @@ class AnyListClient {
       const error = new Error('No list name provided and no default list configured');
       console.error(error.message);
       throw error;
+    }
+
+    // Re-sync in-memory lists at most once per TTL. We no longer hold an AnyList
+    // websocket (every push triggered a full account download), so this is the
+    // only thing that keeps list contents fresh.
+    if (this.client && this._cache && this._cache.isStale()) {
+      if (this._cooldownUntil && Date.now() < this._cooldownUntil) {
+        throw new Error(`AnyList rate-limited us; retrying after ${new Date(this._cooldownUntil).toISOString()}`);
+      }
+      try {
+        await this.client.getLists();
+      } catch (err) {
+        if (err?.response?.statusCode === 429) this._cooldownUntil = Date.now() + 15 * 60 * 1000;
+        throw new Error(`Failed to refresh AnyList data: ${err.message}`);
+      }
+      this.targetList = null;
     }
 
     // If already connected to the same list, skip reconnection
@@ -73,7 +91,10 @@ class AnyListClient {
         });
         try {
           console.error(`Connecting to AnyList as ${username}...`);
-          await client.login();
+          // login(false): no websocket. Its "refresh-shopping-lists" push made anylist-js
+          // re-download the whole account on every change anyone made.
+          await client.login(false);
+          this._cache = installUserDataCache(client);
           await client.getLists();
         } catch (err) {
           // Do NOT keep a half-initialised client: it would make every later call
@@ -115,6 +136,7 @@ class AnyListClient {
     if (this.client) this.client.teardown();
     this.client = null;
     this.targetList = null;
+    this._cache = null;
   }
 
   getAvailableListNames() {
@@ -769,7 +791,32 @@ class AnyListClient {
     }
     this.client = null;
     this.targetList = null;
+    this._cache = null;
   }
+
+  /** Force the next read to re-download account data (called after non-list writes). */
+  _invalidateUserData() {
+    if (this._cache) this._cache.invalidate();
+  }
+}
+
+// Writes that anylist-js does not patch into its in-memory copy: invalidate so the
+// next read re-downloads once (instead of re-downloading on every read).
+for (const method of [
+  'importRecipeFromUrl', 'createRecipe', 'deleteRecipe',
+  'createMealPlanEvent', 'deleteMealPlanEvent',
+  'createRecipeCollection', 'deleteRecipeCollection',
+  'createStore', 'deleteStore', 'setItemStore',
+]) {
+  const original = AnyListClient.prototype[method];
+  if (!original) continue;
+  AnyListClient.prototype[method] = async function (...args) {
+    try {
+      return await original.apply(this, args);
+    } finally {
+      this._invalidateUserData();
+    }
+  };
 }
 
 export default AnyListClient;
